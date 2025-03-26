@@ -26,7 +26,7 @@ class Header extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <h3 className={classNames} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }} />
       </div>
     );
@@ -44,7 +44,7 @@ class Paragraph extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <p className={classNames} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }} />
       </div>
     );
@@ -62,7 +62,7 @@ class Label extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <label className={`${classNames} form-label`} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }}/>
       </div>
     );
@@ -76,7 +76,7 @@ class LineBreak extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <hr />
       </div>
     );
@@ -108,7 +108,7 @@ class TextInput extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <input {...props} />

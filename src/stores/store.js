@@ -1,5 +1,6 @@
 import Store from 'beedle';
 import { get, post } from './requests';
+import ID from '../UUID';
 
 let _saveUrl;
 let _onPost;
@@ -86,6 +87,35 @@ const store = new Store({
       } else if (_saveUrl) {
         post(_saveUrl, { task_data: data });
       }
+    },
+
+    duplicate(context, element) {
+      const { data, saveAlways } = context.state;
+      const newElement = { ...element };
+      
+      // Generate new unique ID
+      newElement.id = ID.uuid();
+      
+      // If the element has a field_name, append a number to make it unique
+      if (newElement.field_name) {
+        const baseFieldName = newElement.field_name;
+        const existingNames = data.map(item => item.field_name);
+        let counter = 1;
+        let fieldName;
+        
+        do {
+          fieldName = `${baseFieldName}_${counter}`;
+          counter++;
+        } while (existingNames.includes(fieldName));
+        
+        newElement.field_name = fieldName;
+      }
+
+      // Insert the duplicated element after the original
+      const index = data.indexOf(element);
+      data.splice(index + 1, 0, newElement);
+      
+      this.setData(context, data, saveAlways);
     },
   },
 

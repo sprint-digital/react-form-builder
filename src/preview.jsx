@@ -8,6 +8,7 @@ import store from './stores/store';
 import FormElementsEdit from './form-dynamic-edit';
 import SortableFormElements from './sortable-form-elements';
 import CustomDragLayer from './form-elements/component-drag-layer';
+import ID from './UUID';
 
 const { PlaceHolder } = SortableFormElements;
 
@@ -37,6 +38,7 @@ export default class Preview extends React.Component {
     this.setAsChild = this.setAsChild.bind(this);
     this.removeChild = this.removeChild.bind(this);
     this._onDestroy = this._onDestroy.bind(this);
+    this.duplicateCard = this.duplicateCard.bind(this);
   }
 
   componentDidMount() {
@@ -241,6 +243,33 @@ export default class Preview extends React.Component {
     store.dispatch('updateOrder', newData.data);
   }
 
+  duplicateCard(item) {
+    const { data } = this.state;
+    const index = data.indexOf(item);
+    // Create a deep copy of the item
+    const newItem = JSON.parse(JSON.stringify(item));
+    // Generate new unique ID
+    newItem.id = ID.uuid();
+    // If the element has a field_name, append a number to make it unique
+    if (newItem.field_name) {
+      const baseFieldName = newItem.field_name;
+      const existingNames = data.map(x => x.field_name).filter(Boolean);
+      let counter = 1;
+      let fieldName;
+      do {
+        fieldName = `${baseFieldName}_${counter}`;
+        counter++;
+      } while (existingNames.includes(fieldName));
+      newItem.field_name = fieldName;
+    }
+    // Insert the duplicated element after the original
+    const newData = [...data];
+    newData.splice(index + 1, 0, newItem);
+    this.seq = this.seq > 100000 ? 0 : this.seq + 1;
+    store.dispatch('updateOrder', newData);
+    this.setState({ data: newData });
+  }
+
   getElement(item, index) {
     if (item.custom) {
       if (!item.component || typeof item.component !== 'function') {
@@ -253,7 +282,7 @@ export default class Preview extends React.Component {
     if (SortableFormElement === null) {
       return null;
     }
-    return <SortableFormElement id={item.id} seq={this.seq} index={index} moveCard={this.moveCard} insertCard={this.insertCard} mutable={false} parent={this.props.parent} editModeOn={this.props.editModeOn} isDraggable={true} key={item.id} sortData={item.id} data={item} getDataById={this.getDataById} setAsChild={this.setAsChild} removeChild={this.removeChild} _onDestroy={this._onDestroy} />;
+    return <SortableFormElement id={item.id} seq={this.seq} index={index} moveCard={this.moveCard} insertCard={this.insertCard} mutable={false} parent={this.props.parent} editModeOn={this.props.editModeOn} isDraggable={true} key={item.id} sortData={item.id} data={item} getDataById={this.getDataById} setAsChild={this.setAsChild} removeChild={this.removeChild} _onDestroy={this._onDestroy} duplicateCard={this.duplicateCard} />;
   }
 
   showEditForm() {

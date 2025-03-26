@@ -116,64 +116,32 @@ const cardTarget = {
 export default function (ComposedComponent) {
   class Card extends Component {
     static propTypes = {
-      connectDragSource: PropTypes.func.isRequired,
-      connectDropTarget: PropTypes.func.isRequired,
+      connectDragSource: PropTypes.func,
+      connectDragPreview: PropTypes.func,
+      connectDropTarget: PropTypes.func,
       index: PropTypes.number.isRequired,
-      isDragging: PropTypes.bool.isRequired,
+      isDragging: PropTypes.bool,
       id: PropTypes.any.isRequired,
-      data: PropTypes.object.isRequired,
+      // text: PropTypes.string.isRequired,
       moveCard: PropTypes.func.isRequired,
-      insertCard: PropTypes.func.isRequired,
-      removeCard: PropTypes.func.isRequired,
-      duplicateCard: PropTypes.func.isRequired,
-    };
+      seq: PropTypes.number,
+    }
 
     static defaultProps = {
-      isDragging: false,
-    };
-
-    handleDuplicate = () => {
-      this.props.duplicateCard(this.props.data, this.props.index);
+      seq: -1,
     };
 
     render() {
       const {
         isDragging,
-        connectDragSource,
+        // connectDragSource,
+        connectDragPreview,
         connectDropTarget,
-        data,
-        removeCard,
       } = this.props;
-
       const opacity = isDragging ? 0 : 1;
 
-      return connectDragSource(
-        connectDropTarget(
-          <div style={{ ...style, opacity }}>
-            <div className="form-element-header">
-              <span className="form-element-type">{data.element}</span>
-              <div className="form-element-actions">
-                <button
-                  type="button"
-                  className="btn btn-link btn-sm"
-                  onClick={this.handleDuplicate}
-                  title="Duplicate"
-                >
-                  <i className="fa fa-copy" />
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-link btn-sm"
-                  onClick={() => removeCard(this.props.index)}
-                  title="Remove"
-                >
-                  <i className="fa fa-trash" />
-                </button>
-              </div>
-            </div>
-            {this.props.children}
-          </div>
-        )
+      return connectDragPreview(
+        connectDropTarget(<div><ComposedComponent {...this.props} style={{ ...style, opacity }}></ComposedComponent></div>),
       );
     }
   }

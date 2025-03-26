@@ -12,6 +12,8 @@ import { TwoColumnRow, ThreeColumnRow, MultiColumnRow } from './multi-column';
 import { FieldSet } from './fieldset';
 import CustomElement from './form-elements/custom-element';
 import Registry from './stores/registry';
+import ID from './UUID';
+import './styles/form-builder.css';
 
 const {
   Image, Checkboxes, Signature, Download, Camera, FileUpload,
@@ -34,6 +36,7 @@ class ReactForm extends React.Component {
     this.handleBlur = this.handleBlur.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.duplicateCard = this.duplicateCard.bind(this);
   }
 
   _convert(answers) {
@@ -371,6 +374,34 @@ class ReactForm extends React.Component {
     const { backButton = false } = this.props;
 
     return backButton || <a href={this.props.back_action} className='btn btn-default btn-cancel btn-big'>{backName}</a>;
+  }
+
+  duplicateCard(data, index) {
+    const newData = { ...data };
+    // Generate new unique ID for the duplicated element
+    newData.id = ID.uuid();
+    
+    // If the element has a field_name, append a number to make it unique
+    if (newData.field_name) {
+      const baseFieldName = newData.field_name;
+      let counter = 1;
+      let newFieldName = `${baseFieldName}_${counter}`;
+      
+      // Keep incrementing counter until we find a unique field name
+      while (this._isFieldNameTaken(newFieldName)) {
+        counter++;
+        newFieldName = `${baseFieldName}_${counter}`;
+      }
+      newData.field_name = newFieldName;
+    }
+
+    // Insert the duplicated element after the original
+    this.props.insertCard(newData, index + 1);
+  }
+
+  _isFieldNameTaken(fieldName) {
+    // Check if the field name is already used in the form
+    return this.props.elements.some(element => element.field_name === fieldName);
   }
 
   render() {

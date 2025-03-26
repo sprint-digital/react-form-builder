@@ -116,32 +116,64 @@ const cardTarget = {
 export default function (ComposedComponent) {
   class Card extends Component {
     static propTypes = {
-      connectDragSource: PropTypes.func,
-      connectDragPreview: PropTypes.func,
-      connectDropTarget: PropTypes.func,
+      connectDragSource: PropTypes.func.isRequired,
+      connectDropTarget: PropTypes.func.isRequired,
       index: PropTypes.number.isRequired,
-      isDragging: PropTypes.bool,
+      isDragging: PropTypes.bool.isRequired,
       id: PropTypes.any.isRequired,
-      // text: PropTypes.string.isRequired,
+      data: PropTypes.object.isRequired,
       moveCard: PropTypes.func.isRequired,
-      seq: PropTypes.number,
-    }
+      insertCard: PropTypes.func.isRequired,
+      removeCard: PropTypes.func.isRequired,
+      duplicateCard: PropTypes.func.isRequired,
+    };
 
     static defaultProps = {
-      seq: -1,
+      isDragging: false,
+    };
+
+    handleDuplicate = () => {
+      this.props.duplicateCard(this.props.data, this.props.index);
     };
 
     render() {
       const {
         isDragging,
-        // connectDragSource,
-        connectDragPreview,
+        connectDragSource,
         connectDropTarget,
+        data,
+        removeCard,
       } = this.props;
+
       const opacity = isDragging ? 0 : 1;
 
-      return connectDragPreview(
-        connectDropTarget(<div><ComposedComponent {...this.props} style={{ ...style, opacity }}></ComposedComponent></div>),
+      return connectDragSource(
+        connectDropTarget(
+          <div style={{ ...style, opacity }}>
+            <div className="form-element-header">
+              <span className="form-element-type">{data.element}</span>
+              <div className="form-element-actions">
+                <button
+                  type="button"
+                  className="btn btn-link btn-sm"
+                  onClick={this.handleDuplicate}
+                  title="Duplicate"
+                >
+                  <i className="fa fa-copy" />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-link btn-sm"
+                  onClick={() => removeCard(this.props.index)}
+                  title="Remove"
+                >
+                  <i className="fa fa-trash" />
+                </button>
+              </div>
+            </div>
+            {this.props.children}
+          </div>
+        )
       );
     }
   }

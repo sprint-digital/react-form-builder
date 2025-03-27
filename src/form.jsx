@@ -288,6 +288,11 @@ class ReactForm extends React.Component {
     }
 
     data_items.forEach(item => {
+      // Skip validation for internal elements
+      if (item.isInternal) {
+        return;
+      }
+
       if (item.element === 'Signature') {
         this._getSignatureImg(item);
       }
@@ -355,7 +360,18 @@ class ReactForm extends React.Component {
   }
 
   getContainerElement(item, Element) {
-    const controls = item.childItems.map(x => (x ? this.getInputElement(this.getDataById(x)) : <div>&nbsp;</div>));
+    // Filter child items based on show_internal prop
+    const filteredChildItems = item.childItems.map(x => {
+      if (!x) return null;
+      const childItem = this.getDataById(x);
+      if (!childItem) return null;
+      if (!this.props.show_internal && childItem.isInternal) {
+        return null;
+      }
+      return x;
+    });
+
+    const controls = filteredChildItems.map(x => (x ? this.getInputElement(this.getDataById(x)) : <div>&nbsp;</div>));
     return (<Element mutable={true} key={`form_${item.id}`} data={item} controls={controls} />);
   }
 
@@ -411,6 +427,11 @@ class ReactForm extends React.Component {
 
     if (this.props.display_short) {
       data_items = this.props.data.filter((i) => i.alternateForm === true);
+    }
+
+    // Filter out internal elements based on show_internal prop
+    if (!this.props.show_internal) {
+      data_items = data_items.filter((i) => !i.isInternal);
     }
 
     data_items.forEach((item) => {

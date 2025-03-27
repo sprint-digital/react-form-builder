@@ -162,9 +162,11 @@ export interface FormGeneratorProps {
   download_path?: string;
   display_short?: boolean;
   read_only?: boolean;
+  show_internal?: boolean;
   // eslint-disable-next-line no-undef
   variables?: Record<any, any>;
   submitButton?: JSX.Element;
+  backButton?: JSX.Element;
 }
 
 export class ReactFormGenerator extends React.Component<FormGeneratorProps> {}

@@ -243,30 +243,27 @@ export default class Preview extends React.Component {
     store.dispatch('updateOrder', newData.data);
   }
 
-  duplicateCard(item) {
-    const { data } = this.state;
-    const index = data.indexOf(item);
+  duplicateCard = (item) => {
     // Create a deep copy of the item
     const newItem = JSON.parse(JSON.stringify(item));
-    // Generate new unique ID
+    
+    // Generate a new unique ID
     newItem.id = ID.uuid();
-    // If the element has a field_name, append a number to make it unique
-    if (newItem.field_name) {
-      const baseFieldName = newItem.field_name;
-      const existingNames = data.map(x => x.field_name).filter(Boolean);
-      let counter = 1;
-      let fieldName;
-      do {
-        fieldName = `${baseFieldName}_${counter}`;
-        counter++;
-      } while (existingNames.includes(fieldName));
-      newItem.field_name = fieldName;
+    
+    // Make the field name unique by appending a number
+    const existingNames = this.state.data.map(element => element.field_name);
+    let newFieldName = newItem.field_name;
+    let counter = 1;
+    while (existingNames.includes(newFieldName)) {
+      newFieldName = `${newItem.field_name}_${counter}`;
+      counter++;
     }
-    // Insert the duplicated element after the original
-    const newData = [...data];
+    newItem.field_name = newFieldName;
+
+    // Insert the new item after the original
+    const index = this.state.data.findIndex(element => element.id === item.id);
+    const newData = [...this.state.data];
     newData.splice(index + 1, 0, newItem);
-    this.seq = this.seq > 100000 ? 0 : this.seq + 1;
-    store.dispatch('updateOrder', newData);
     this.setState({ data: newData });
   }
 

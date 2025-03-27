@@ -12,6 +12,7 @@ import { TwoColumnRow, ThreeColumnRow, MultiColumnRow } from './multi-column';
 import { FieldSet } from './fieldset';
 import CustomElement from './form-elements/custom-element';
 import Registry from './stores/registry';
+import ID from './UUID';
 
 const {
   Image, Checkboxes, Signature, Download, Camera, FileUpload,
@@ -34,6 +35,7 @@ class ReactForm extends React.Component {
     this.handleBlur = this.handleBlur.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleDuplicate = this.handleDuplicate.bind(this);
   }
 
   _convert(answers) {
@@ -245,6 +247,37 @@ class ReactForm extends React.Component {
     }
   }
 
+  handleDuplicate(element) {
+    const newElement = { ...element };
+    
+    // Generate new unique ID
+    newElement.id = ID.uuid();
+    
+    // If the element has a field_name, append a number to make it unique
+    if (newElement.field_name) {
+      const baseFieldName = newElement.field_name;
+      const existingNames = this.props.elements.map(item => item.field_name);
+      let counter = 1;
+      let fieldName;
+      
+      do {
+        fieldName = `${baseFieldName}_${counter}`;
+        counter++;
+      } while (existingNames.includes(fieldName));
+      
+      newElement.field_name = fieldName;
+    }
+
+    // Insert the duplicated element after the original
+    const index = this.props.elements.indexOf(element);
+    const newElements = [...this.props.elements];
+    newElements.splice(index + 1, 0, newElement);
+    
+    if (this.props.onChange) {
+      this.props.onChange(newElements);
+    }
+  }
+
   validateForm() {
     const errors = [];
     let data_items = this.props.data;
@@ -255,6 +288,11 @@ class ReactForm extends React.Component {
     }
 
     data_items.forEach(item => {
+      // Skip validation for internal elements
+      if (item.isInternal) {
+        return;
+      }
+
       if (item.element === 'Signature') {
         this._getSignatureImg(item);
       }
@@ -322,7 +360,18 @@ class ReactForm extends React.Component {
   }
 
   getContainerElement(item, Element) {
-    const controls = item.childItems.map(x => (x ? this.getInputElement(this.getDataById(x)) : <div>&nbsp;</div>));
+    // Filter child items based on show_internal prop
+    const filteredChildItems = item.childItems.map(x => {
+      if (!x) return null;
+      const childItem = this.getDataById(x);
+      if (!childItem) return null;
+      if (!this.props.show_internal && childItem.isInternal) {
+        return null;
+      }
+      return x;
+    });
+
+    const controls = filteredChildItems.map(x => (x ? this.getInputElement(this.getDataById(x)) : <div>&nbsp;</div>));
     return (<Element mutable={true} key={`form_${item.id}`} data={item} controls={controls} />);
   }
 
@@ -378,6 +427,11 @@ class ReactForm extends React.Component {
 
     if (this.props.display_short) {
       data_items = this.props.data.filter((i) => i.alternateForm === true);
+    }
+
+    // Filter out internal elements based on show_internal prop
+    if (!this.props.show_internal) {
+      data_items = data_items.filter((i) => !i.isInternal);
     }
 
     data_items.forEach((item) => {

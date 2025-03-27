@@ -1,16 +1,92 @@
-[![npm version](https://badge.fury.io/js/react-form-builder2.svg)](//npmjs.com/package/react-form-builder2)
-[![downloads](https://img.shields.io/npm/dm/react-form-builder2.svg)](https://img.shields.io/npm/dm/react-form-builder2.svg)
-# React Form Builder 2
-A complete react form builder that interfaces with a json endpoint to load and save generated forms.
-- Upgraded to React 16.8.6
-- Bootstrap 4.x, Font-Awesome 5.x
-- Use react-dnd for Drag & Drop
-- Save form data with dummy api server
-- Show posted data on readonly form
-- Multi column row
-- Custom Components
+# React Form Builder
 
-[DEMO](https://kiho.github.io/react-form-builder/) Slow Loading.... back-end is running at FREE Heroku, hence it may not work if free time runs out for month.
+[Original Dev](https://github.com/kiho/react-form-builder) And there's an original original before him as well. 
+
+A form builder for React that allows you to create forms with drag and drop functionality.
+
+
+## Features
+
+- Drag and drop form elements
+- Custom form elements
+- Form validation
+- Form data export
+- Form data import
+- Form preview
+- Form builder
+- Form elements:
+  - Text Input
+  - Text Area
+  - Dropdown
+  - Checkboxes
+  - Radio Buttons
+  - Date Picker
+  - Signature
+  - Rating
+  - Image
+  - File Upload
+  - Camera
+  - Range
+  - Tags
+  - HyperLink
+  - Download
+  - Layout
+  - Header
+  - Paragraph
+  - Label
+  - Line Break
+
+## Installation
+
+```bash
+npm install sprint-digital-react-form-builder
+```
+
+## Usage
+
+```jsx
+import { ReactFormBuilder } from 'sprint-digital-react-form-builder';
+import 'sprint-digital-react-form-builder/dist/app.css';
+
+function App() {
+  return <ReactFormBuilder />;
+}
+```
+
+## Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| onPost | function | Callback function when form is submitted |
+| onLoad | function | Callback function when form is loaded |
+| url | string | URL to load form data from |
+| saveUrl | string | URL to save form data to |
+| saveAlways | boolean | Whether to save form data on every change |
+| editMode | boolean | Whether to enable edit mode |
+| editElement | object | Element being edited |
+| className | string | CSS class name |
+| renderEditForm | function | Function to render edit form |
+
+## Examples
+
+- [Basic](https://github.com/sprint-digital/react-form-builder/tree/master/examples/demo)
+- [JSON Post](https://github.com/sprint-digital/react-form-builder/tree/master/examples/custom)
+- [UMD](https://github.com/sprint-digital/react-form-builder/tree/master/examples/umd)
+- [NEXT](https://github.com/sprint-digital/react-form-builder/tree/master/examples/next)
+- [NEXT-Mongo](https://github.com/sprint-digital/react-form-builder/tree/master/examples/mongo)
+- [create-react-app](https://github.com/sprint-digital/react-form-builder/tree/master/examples/cra)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ![](screenshot.png)
 
@@ -234,14 +310,6 @@ const items = [{
        
 - Find working example [here](https://github.com/Kiho/react-form-builder/blob/master/examples/custom/app.js)
 
-
-# Examples
-- [Basic](https://github.com/Kiho/react-form-builder/tree/master/examples/demo)
-- [JSON Post](https://github.com/Kiho/react-form-builder/tree/master/examples/custom)
-- [UMD](https://github.com/Kiho/react-form-builder/tree/master/examples/umd)
-- [NEXT](https://github.com/Kiho/react-form-builder/tree/master/examples/next)
-- [NEXT-Mongo](https://github.com/Kiho/react-form-builder/tree/master/examples/mongo)
-- [create-react-app](https://github.com/Kiho/react-form-builder/tree/master/examples/cra)
 
 # Tests
 ```bash

@@ -117,6 +117,7 @@ export default class FormElementsEdit extends React.Component {
     const this_checked_center = this.props.element.hasOwnProperty('center') ? this.props.element.center : false;
     const this_checked_page_break = this.props.element.hasOwnProperty('pageBreakBefore') ? this.props.element.pageBreakBefore : false;
     const this_checked_alternate_form = this.props.element.hasOwnProperty('alternateForm') ? this.props.element.alternateForm : false;
+    const this_checked_internal = this.props.element.hasOwnProperty('isInternal') ? this.props.element.isInternal : false;
 
     const {
       canHavePageBreakBefore, canHaveAlternateForm, canHaveDisplayHorizontal, canHaveOptionCorrect, canHaveOptionValue,
@@ -184,6 +185,12 @@ export default class FormElementsEdit extends React.Component {
               <input id="is-required" className="custom-control-input" type="checkbox" checked={this_checked} value={true} onChange={this.editElementProp.bind(this, 'required', 'checked')} />
               <label className="custom-control-label" htmlFor="is-required">
               <IntlMessages id="required" />
+              </label>
+            </div>
+            <div className="custom-control custom-checkbox">
+              <input id="is-internal" className="custom-control-input" type="checkbox" checked={this_checked_internal} value={true} onChange={this.editElementProp.bind(this, 'isInternal', 'checked')} />
+              <label className="custom-control-label" htmlFor="is-internal">
+              Internal use only - Not visible to candidates
               </label>
             </div>
             { this.props.element.hasOwnProperty('readOnly') &&

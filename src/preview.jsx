@@ -244,6 +244,8 @@ export default class Preview extends React.Component {
   }
 
   duplicateCard = (item) => {
+    if (!item) return;
+
     // Create a deep copy of the item
     const newItem = JSON.parse(JSON.stringify(item));
     
@@ -260,11 +262,101 @@ export default class Preview extends React.Component {
     }
     newItem.field_name = newFieldName;
 
-    // Insert the new item after the original
-    const index = this.state.data.findIndex(element => element.id === item.id);
-    const newData = [...this.state.data];
-    newData.splice(index + 1, 0, newItem);
-    this.setState({ data: newData });
+    // If this is a Layout component with child items, create deep copies of all children
+    if (newItem.childItems && newItem.childItems.length > 0) {
+      const newChildItems = [];
+      const childIdMap = new Map(); // Map to track old ID -> new ID relationships
+
+      // First pass: create deep copies of all child items
+      newItem.childItems.forEach((childId, index) => {
+        if (childId) {
+          const childItem = this.getDataById(childId);
+          if (childItem) {
+            const newChildItem = JSON.parse(JSON.stringify(childItem));
+            newChildItem.id = ID.uuid();
+            newChildItem.parentId = newItem.id;
+            newChildItem.col = index;
+            newChildItem.custom = childItem.custom || false;
+            newChildItem.element = childItem.element;
+            newChildItem.key = childItem.key;
+
+            // Handle deep cards (cards within cards)
+            if (newChildItem.childItems && newChildItem.childItems.length > 0) {
+              const newDeepChildItems = [];
+              newChildItem.childItems.forEach((deepChildId, deepIndex) => {
+                if (deepChildId) {
+                  const deepChildItem = this.getDataById(deepChildId);
+                  if (deepChildItem) {
+                    const newDeepChildItem = JSON.parse(JSON.stringify(deepChildItem));
+                    newDeepChildItem.id = ID.uuid();
+                    newDeepChildItem.parentId = newChildItem.id;
+                    newDeepChildItem.col = deepIndex;
+                    newDeepChildItem.custom = deepChildItem.custom || false;
+                    newDeepChildItem.element = deepChildItem.element;
+                    newDeepChildItem.key = deepChildItem.key;
+
+                    // Make deep child's field name unique
+                    let deepChildFieldName = newDeepChildItem.field_name;
+                    let deepChildCounter = 1;
+                    while (existingNames.includes(deepChildFieldName)) {
+                      deepChildFieldName = `${newDeepChildItem.field_name}_${deepChildCounter}`;
+                      deepChildCounter++;
+                    }
+                    newDeepChildItem.field_name = deepChildFieldName;
+
+                    childIdMap.set(deepChildId, newDeepChildItem.id);
+                    newDeepChildItems.push(newDeepChildItem);
+                  }
+                } else {
+                  newDeepChildItems.push(null);
+                }
+              });
+              newChildItem.childItems = newDeepChildItems.map(child => child ? child.id : null);
+              newChildItems.push(...newDeepChildItems.filter(Boolean));
+            }
+            
+            // Make child's field name unique
+            let childFieldName = newChildItem.field_name;
+            let childCounter = 1;
+            while (existingNames.includes(childFieldName)) {
+              childFieldName = `${newChildItem.field_name}_${childCounter}`;
+              childCounter++;
+            }
+            newChildItem.field_name = childFieldName;
+
+            childIdMap.set(childId, newChildItem.id);
+            newChildItems.push(newChildItem);
+          } else {
+            newChildItems.push(null);
+          }
+        } else {
+          newChildItems.push(null);
+        }
+      });
+
+      // Second pass: update childItems array with new IDs
+      newItem.childItems = newChildItems.map(child => child ? child.id : null);
+
+      // Insert all new child items into the data array
+      const index = this.state.data.findIndex(element => element.id === item.id);
+      const newData = [...this.state.data];
+      newData.splice(index + 1, 0, newItem, ...newChildItems.filter(Boolean));
+      
+      // Update state and store
+      this.setState({ data: newData });
+      this.seq = this.seq > 100000 ? 0 : this.seq + 1;
+      store.dispatch('updateOrder', newData);
+    } else {
+      // For non-Layout components, just insert the new item
+      const index = this.state.data.findIndex(element => element.id === item.id);
+      const newData = [...this.state.data];
+      newData.splice(index + 1, 0, newItem);
+      
+      // Update state and store
+      this.setState({ data: newData });
+      this.seq = this.seq > 100000 ? 0 : this.seq + 1;
+      store.dispatch('updateOrder', newData);
+    }
   }
 
   getElement(item, index) {

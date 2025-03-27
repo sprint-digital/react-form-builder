@@ -26,7 +26,7 @@ class Header extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <h3 className={classNames} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }} />
       </div>
     );
@@ -44,7 +44,7 @@ class Paragraph extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <p className={classNames} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }} />
       </div>
     );
@@ -62,7 +62,7 @@ class Label extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <label className={`${classNames} form-label`} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }}/>
       </div>
     );
@@ -76,7 +76,7 @@ class LineBreak extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <hr />
       </div>
     );
@@ -108,7 +108,7 @@ class TextInput extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <input {...props} />
@@ -143,7 +143,7 @@ class EmailInput extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props}/>
           <input {...props} />
@@ -178,7 +178,7 @@ class PhoneNumber extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props}/>
           <input {...props} />
@@ -214,7 +214,7 @@ class NumberInput extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <input {...props} />
@@ -249,7 +249,7 @@ class TextArea extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props}/>
           <textarea {...props} />
@@ -284,7 +284,7 @@ class Dropdown extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <select {...props}>
@@ -347,7 +347,7 @@ class Signature extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           {this.props.read_only === true || !!sourceDataURL
@@ -411,7 +411,7 @@ class Tags extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <Select {...props} />
@@ -437,7 +437,7 @@ class Checkboxes extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           {this.props.data.options.map((option) => {
@@ -486,7 +486,7 @@ class RadioButtons extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           {this.props.data.options.map((option) => {
@@ -530,7 +530,7 @@ class Image extends React.Component {
 
     return (
       <div style={{ ...this.props.style, ...style }} className={baseClasses} >
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         { this.props.data.src &&
           <img src={this.props.data.src} width={this.props.data.width} height={this.props.data.height} />
         }
@@ -565,7 +565,7 @@ class Rating extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <StarRating {...props} />
@@ -582,7 +582,7 @@ class HyperLink extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
         <label className={'form-label'}>
           <a target="_blank" href={this.props.data.href} dangerouslySetInnerHTML={{ __html: myxss.process(this.props.data.content) }}/>
@@ -600,7 +600,7 @@ class Download extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <a href={`${this.props.download_path}?id=${this.props.data.file_path}`}>{this.props.data.content}</a>
         </div>
@@ -660,7 +660,7 @@ class Camera extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           {this.props.read_only === true &&
@@ -778,7 +778,7 @@ class FileUpload extends React.Component {
     }
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           {this.props.read_only === true &&
@@ -905,7 +905,7 @@ class Range extends React.Component {
 
     return (
       <div style={{ ...this.props.style }} className={baseClasses}>
-        <ComponentHeader {...this.props} />
+        <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
           <div className="range">

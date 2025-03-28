@@ -246,8 +246,25 @@ export default class FormElementsEdit extends React.Component {
         { this.props.element.hasOwnProperty('src') &&
           <div>
             <div className="form-group">
-              <label className="control-label" htmlFor="srcInput"><IntlMessages id="link-to" />:</label>
-              <input id="srcInput" type="text" className="form-control" defaultValue={this.props.element.src} onBlur={this.updateElement.bind(this)} onChange={this.editElementProp.bind(this, 'src', 'value')} />
+              <label className="control-label" htmlFor="srcInput"><IntlMessages id="upload-image" />:</label>
+              <input 
+                id="srcInput" 
+                type="file" 
+                accept="image/*"
+                className="form-control" 
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      this.editElementProp('src', 'value', { target: { value: event.target.result } });
+                      this.updateElement();
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              <small className="form-text text-muted">Only image files (jpg, jpeg, png, gif) are allowed.</small>
             </div>
           </div>
         }

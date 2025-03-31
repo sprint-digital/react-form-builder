@@ -317,6 +317,19 @@ class Signature extends React.Component {
     }
   }
 
+  getSignatureImg = () => {
+    if (this.canvas.current) {
+      const signatureData = this.canvas.current.toDataURL().split(',')[1];
+      this.setState({ defaultValue: signatureData });
+      return signatureData;
+    }
+    return this.state.defaultValue;
+  }
+
+  handleEnd = () => {
+    this.getSignatureImg();
+  }
+
   render() {
     const { defaultValue } = this.state;
     let canClear = !!defaultValue;
@@ -328,14 +341,15 @@ class Signature extends React.Component {
       props.defaultValue = defaultValue;
       props.ref = this.inputField;
     }
-    const pad_props = {};
+    const padProps = {};
     // umd requires canvasProps={{ width: 400, height: 150 }}
     if (this.props.mutable) {
-      pad_props.defaultValue = defaultValue;
-      pad_props.ref = this.canvas;
+      padProps.defaultValue = defaultValue;
+      padProps.ref = this.canvas;
+      padProps.onEnd = this.handleEnd;
       canClear = !this.props.read_only;
     }
-    pad_props.clearOnResize = false;
+    padProps.clearOnResize = false;
 
     let baseClasses = 'SortableItem rfb-item';
     if (this.props.data.pageBreakBefore) { baseClasses += ' alwaysbreak'; }
@@ -352,7 +366,7 @@ class Signature extends React.Component {
           <ComponentLabel {...this.props} />
           {this.props.read_only === true || !!sourceDataURL
             ? (<img src={sourceDataURL} />)
-            : (<SignaturePad {...pad_props} />)
+            : (<SignaturePad {...padProps} />)
           }
           {canClear && (
             <i className="fas fa-times clear-signature" onClick={this.clear} title="Clear Signature"></i>)}
@@ -720,7 +734,14 @@ class Camera extends React.Component {
 class FileUpload extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { fileUpload: null };
+    this.state = { 
+      fileUpload: props.defaultValue ? {
+        name: props.defaultValue.name || 'Uploaded File',
+        size: props.defaultValue.size || 0,
+        type: props.defaultValue.type || 'application/octet-stream',
+        data: props.defaultValue.data
+      } : null 
+    };
   }
 
   displayFileUpload = (e) => {
@@ -730,10 +751,27 @@ class FileUpload extends React.Component {
 
     if (target.files && target.files.length > 0) {
       file = target.files[0];
-
-      self.setState({
-        fileUpload: file,
-      });
+      // Check file size (10MB = 10 * 1024 * 1024 bytes)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds 10MB limit. Please choose a smaller file.');
+        target.value = ''; // Clear the input
+        return;
+      }
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const binaryData = event.target.result;
+        self.setState({
+          fileUpload: {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: binaryData
+          },
+        });
+      };
+      
+      reader.readAsDataURL(file);
     }
   };
 
@@ -743,29 +781,15 @@ class FileUpload extends React.Component {
     });
   };
 
-  saveFile = async (e) => {
+  saveFile = (e) => {
     e.preventDefault();
-    const sourceUrl = this.props.defaultValue;
-    const response = await fetch(sourceUrl, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      responseType: 'blob',
-    });
-    const dispositionHeader = response.headers.get('Content-Disposition');
-    const resBlob = await response.blob();
-    // eslint-disable-next-line no-undef
-    const blob = new Blob([resBlob], {
-      type: this.props.data.fileType || response.headers.get('Content-Type'),
-    });
-    if (dispositionHeader && dispositionHeader.indexOf(';filename=') > -1) {
-      const fileName = dispositionHeader.split(';filename=')[1];
-      saveAs(blob, fileName);
-    } else {
-      const fileName = sourceUrl.substring(sourceUrl.lastIndexOf('/') + 1);
-      saveAs(response.url, fileName);
+    if (this.state.fileUpload && this.state.fileUpload.data) {
+      const link = document.createElement('a');
+      link.href = this.state.fileUpload.data;
+      link.download = this.state.fileUpload.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -781,9 +805,54 @@ class FileUpload extends React.Component {
         <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
-          {this.props.read_only === true &&
-          this.props.defaultValue &&
-          this.props.defaultValue.length > 0 ? (
+
+          <div className='image-upload-container'>
+            <div style={fileInputStyle}>
+              <input
+                name={name}
+                type='file'
+                accept={this.props.data.fileType || '*'}
+                className='image-upload'
+                onChange={this.displayFileUpload}
+              />
+              <div className='image-upload-control'>
+                <div className='btn btn-default'>
+                  <i className='fas fa-file'></i> Upload File
+                </div>
+                <p>Select a file from your computer or device.</p>
+              </div>
+            </div>
+
+            {this.state.fileUpload && (
+              <div>
+                <div className='file-upload-preview'>
+                  <div
+                    style={{ display: 'inline-block', marginRight: '5px' }}
+                  >
+                    {`Name: ${this.state.fileUpload.name}`}
+                  </div>
+                  <div style={{ display: 'inline-block', marginLeft: '5px' }}>
+                    {this.state.fileUpload.size.length > 6
+                      ? `Size:  ${Math.ceil(
+                          this.state.fileUpload.size / (1024 * 1024)
+                        )} mb`
+                      : `Size:  ${Math.ceil(
+                          this.state.fileUpload.size / 1024
+                        )} kb`}
+                  </div>
+                </div>
+                <br />
+                <div
+                  className='btn btn-file-upload-clear'
+                  onClick={this.clearFileUpload}
+                >
+                  <i className='fas fa-times'></i> Clear File
+                </div>
+              </div>
+            )}
+          </div>
+
+          {this.state.fileUpload && this.state.fileUpload.data && (
             <div>
               <button
                 className='btn btn-default'
@@ -791,52 +860,6 @@ class FileUpload extends React.Component {
               >
                 <i className='fas fa-download'></i> Download File
               </button>
-            </div>
-          ) : (
-            <div className='image-upload-container'>
-              <div style={fileInputStyle}>
-                <input
-                  name={name}
-                  type='file'
-                  accept={this.props.data.fileType || '*'}
-                  className='image-upload'
-                  onChange={this.displayFileUpload}
-                />
-                <div className='image-upload-control'>
-                  <div className='btn btn-default'>
-                    <i className='fas fa-file'></i> Upload File
-                  </div>
-                  <p>Select a file from your computer or device.</p>
-                </div>
-              </div>
-
-              {this.state.fileUpload && (
-                <div>
-                  <div className='file-upload-preview'>
-                    <div
-                      style={{ display: 'inline-block', marginRight: '5px' }}
-                    >
-                      {`Name: ${this.state.fileUpload.name}`}
-                    </div>
-                    <div style={{ display: 'inline-block', marginLeft: '5px' }}>
-                      {this.state.fileUpload.size.length > 6
-                        ? `Size:  ${Math.ceil(
-                            this.state.fileUpload.size / (1024 * 1024)
-                          )} mb`
-                        : `Size:  ${Math.ceil(
-                            this.state.fileUpload.size / 1024
-                          )} kb`}
-                    </div>
-                  </div>
-                  <br />
-                  <div
-                    className='btn btn-file-upload-clear'
-                    onClick={this.clearFileUpload}
-                  >
-                    <i className='fas fa-times'></i> Clear File
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

@@ -188,6 +188,7 @@ class ReactForm extends React.Component {
         formData.push(item_data);
       }
     });
+
     return formData;
   }
 

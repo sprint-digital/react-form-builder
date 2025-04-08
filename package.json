@@ -1,6 +1,6 @@
 {
   "name": "sprint-digital-react-form-builder",
-  "version": "0.1.51",
+  "version": "0.1.62",
   "description": "A complete form builder for react.",
   "main": "lib/index.js",
   "types": "types/index.d.ts",

@@ -304,9 +304,11 @@ class Signature extends React.Component {
     super(props);
     this.state = {
       defaultValue: props.defaultValue,
+      hasSigned: false,
     };
     this.inputField = React.createRef();
     this.canvas = React.createRef();
+    this.timer = null;
   }
 
   clear = () => {
@@ -314,6 +316,11 @@ class Signature extends React.Component {
       this.setState({ defaultValue: '' });
     } else if (this.canvas.current) {
       this.canvas.current.clear();
+    }
+    this.setState({ hasSigned: false });
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
     }
   }
 
@@ -327,7 +334,18 @@ class Signature extends React.Component {
   }
 
   handleEnd = () => {
-    this.getSignatureImg();
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+    this.timer = setTimeout(() => {
+      this.getSignatureImg();
+    }, 3000);
+  }
+
+  handleStart = () => {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
   }
 
   render() {
@@ -341,12 +359,17 @@ class Signature extends React.Component {
       props.defaultValue = defaultValue;
       props.ref = this.inputField;
     }
-    const padProps = {};
-    // umd requires canvasProps={{ width: 400, height: 150 }}
+    const padProps = {
+      canvasProps: {
+        width: 300,
+        height: 150,
+      }
+    };
     if (this.props.mutable) {
       padProps.defaultValue = defaultValue;
       padProps.ref = this.canvas;
       padProps.onEnd = this.handleEnd;
+      padProps.onBegin = this.handleStart;
       canClear = !this.props.read_only;
     }
     padProps.clearOnResize = false;
@@ -751,14 +774,13 @@ class FileUpload extends React.Component {
 
     if (target.files && target.files.length > 0) {
       file = target.files[0];
-      // Check file size (10MB = 10 * 1024 * 1024 bytes)
-      if (file.size > 10 * 1024 * 1024) {
+      // Check file size (5MB = 5 * 1024 * 1024 bytes)
+      if (file.size > 5 * 1024 * 1024) {
         alert('File size exceeds 10MB limit. Please choose a smaller file.');
         target.value = ''; // Clear the input
         return;
       }
       const reader = new FileReader();
-      
       reader.onload = (event) => {
         const binaryData = event.target.result;
         self.setState({
@@ -770,7 +792,6 @@ class FileUpload extends React.Component {
           },
         });
       };
-      
       reader.readAsDataURL(file);
     }
   };
@@ -819,7 +840,7 @@ class FileUpload extends React.Component {
                 <div className='btn btn-default'>
                   <i className='fas fa-file'></i> Upload File
                 </div>
-                <p>Select a file from your computer or device.</p>
+                <p>Select a file from your computer or device. (Max size: 5MB)</p>
               </div>
             </div>
 

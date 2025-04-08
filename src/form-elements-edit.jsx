@@ -38,6 +38,14 @@ export default class FormElementsEdit extends React.Component {
     // elemProperty could be content or label
     // targProperty could be value or checked
     const this_element = this.state.element;
+    
+    // Handle mutual exclusivity between isInternal and required
+    if (elemProperty === 'isInternal' && e.target.checked) {
+      this_element.required = false;
+    } else if (elemProperty === 'required' && e.target.checked) {
+      this_element.isInternal = false;
+    }
+    
     this_element[elemProperty] = e.target[targProperty];
 
     this.setState({
@@ -134,7 +142,7 @@ export default class FormElementsEdit extends React.Component {
       editorState = this.convertFromHTML(this.props.element.content);
     }
     if (this.props.element.hasOwnProperty('label')) {
-      editorState = this.convertFromHTML(this.props.element.label);
+      editorState = this.convertFromHTML(this.props.element.label || '');
     }
 
     return (

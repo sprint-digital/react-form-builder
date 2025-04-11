@@ -55,7 +55,7 @@ class DatePicker extends React.Component {
     } else {
       value = props.defaultValue;
 
-      if (value === '' || value === undefined) {
+      if (value === '' || value === undefined || value === null) {
         internalValue = undefined;
       } else {
         internalValue = parse(value, state.formatMask, new Date());

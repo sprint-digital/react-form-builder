@@ -42,9 +42,9 @@ class ReactForm extends React.Component {
     if (Array.isArray(answers)) {
       const result = {};
       answers.forEach(x => {
-        if (x.name.indexOf('tags_') > -1) {
+        if (x.name.indexOf('tags_') > -1 && x.value && x.value !== null) {
           result[x.name] = x.value.map(y => y.value);
-        } else {
+        } else if (x.value !== null) {
           result[x.name] = x.value;
         }
       });
@@ -148,7 +148,7 @@ class ReactForm extends React.Component {
           if ($item.value === 0) {
             invalid = true;
           }
-        } else if ($item.value === undefined || $item.value.length < 1) {
+        } else if ($item.value === undefined || $item.value === null || (typeof $item.value === 'string' && $item.value.length < 1)) {
           invalid = true;
         }
       }

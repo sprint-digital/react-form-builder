@@ -776,7 +776,7 @@ class FileUpload extends React.Component {
       file = target.files[0];
       // Check file size (5MB = 5 * 1024 * 1024 bytes)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 10MB limit. Please choose a smaller file.');
+        alert('File size exceeds 5MB limit. Please choose a smaller file.');
         target.value = ''; // Clear the input
         return;
       }
@@ -876,7 +876,7 @@ class FileUpload extends React.Component {
           {this.state.fileUpload && this.state.fileUpload.data && (
             <div>
               <button
-                className='btn btn-default'
+                className='btn btn-default btn-download'
                 onClick={this.saveFile}
               >
                 <i className='fas fa-download'></i> Download File

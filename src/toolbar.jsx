@@ -273,7 +273,7 @@ class Toolbar extends React.Component {
         key: 'DatePicker',
         canDefaultToday: true,
         canReadOnly: true,
-        dateFormat: 'MM/dd/yyyy',
+        dateFormat: 'dd/MM/yyyy',
         timeFormat: 'hh:mm aa',
         showTimeSelect: false,
         showTimeSelectOnly: false,

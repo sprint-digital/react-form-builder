@@ -450,3 +450,20 @@
 .form-place-holder-hidden {
   min-height: 50px;
 }
+
+// Custom btn-primary color overrides
+.btn-primary {
+  background-color: #1F7055;
+  border-color: #1F7055;
+  
+  &:hover, &:focus, &:active, &.active {
+    background-color: #1F7055;
+    border-color: #1F7055;
+  }
+  
+  &.btn-outline-secondary:not(.btn-primary) {
+    background-color: transparent;
+    border-color: #6c757d;
+    color: #6c757d;
+  }
+}

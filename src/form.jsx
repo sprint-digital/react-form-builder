@@ -96,10 +96,10 @@ class ReactForm extends React.Component {
     return $item;
   }
 
-  _getOptionKeyValue = (option) => {
-    return this.props.option_key_value === 'value' ?
-      option.value : option.key;
-  }
+  _getOptionKeyValue = (option) => (
+    this.props.option_key_value === 'value' ?
+      option.value : option.key
+  )
 
   _isIncorrect(item) {
     let incorrect = false;
@@ -161,6 +161,7 @@ class ReactForm extends React.Component {
       id: item.id,
       name: item.field_name,
       custom_name: item.custom_name || item.field_name,
+      custom_value: item.custom_value || null,
     };
 
     // Skip collecting data for internal items when show_internal is true
@@ -170,6 +171,12 @@ class ReactForm extends React.Component {
 
     if (!itemData.name) return null;
     const ref = this.inputs[item.field_name];
+    
+    // For signature elements, capture the current signatureMode
+    if (item.element === 'Signature' && ref && ref.state) {
+      itemData.custom_value = ref.state.signatureMode;
+    }
+    
     if (item.element === 'Checkboxes' || item.element === 'RadioButtons') {
       const checked_options = [];
       item.options.forEach(option => {
@@ -200,6 +207,10 @@ class ReactForm extends React.Component {
 
   _getSignatureImg(item) {
     const ref = this.inputs[item.field_name];
+
+    // Always capture the signature mode, regardless of draw/type
+    item.custom_value = ref.state.signatureMode;
+
     const $canvas_sig = ref.canvas.current;
     if ($canvas_sig) {
       const base64 = $canvas_sig.toDataURL().replace('data:image/png;base64,', '');
@@ -211,6 +222,8 @@ class ReactForm extends React.Component {
         $input_sig.value = base64;
       }
     }
+    // For type mode, the signature data is already in ref.state.defaultValue
+    // and gets set in the hidden input field automatically
   }
 
   handleSubmit(e) {
@@ -236,7 +249,7 @@ class ReactForm extends React.Component {
     }
   }
 
-   handleBlur(event) {
+   handleBlur() {
     // Call submit function on blur
     if (this.props.onBlur) {
       const { onBlur } = this.props;
@@ -245,7 +258,7 @@ class ReactForm extends React.Component {
     }
   }
 
-  handleChange(event) {
+  handleChange() {
     // Call submit function on change
     if (this.props.onChange) {
       const { onChange } = this.props;
@@ -256,22 +269,22 @@ class ReactForm extends React.Component {
 
   handleDuplicate(element) {
     const newElement = { ...element };
-    
+
     // Generate new unique ID
     newElement.id = ID.uuid();
-    
+
     // If the element has a field_name, append a number to make it unique
     if (newElement.field_name) {
       const baseFieldName = newElement.field_name;
       const existingNames = this.props.elements.map(item => item.field_name);
       let counter = 1;
       let fieldName;
-      
+
       do {
         fieldName = `${baseFieldName}_${counter}`;
         counter++;
       } while (existingNames.includes(fieldName));
-      
+
       newElement.field_name = fieldName;
     }
 
@@ -279,7 +292,7 @@ class ReactForm extends React.Component {
     const index = this.props.elements.indexOf(element);
     const newElements = [...this.props.elements];
     newElements.splice(index + 1, 0, newElement);
-    
+
     if (this.props.onChange) {
       this.props.onChange(newElements);
     }

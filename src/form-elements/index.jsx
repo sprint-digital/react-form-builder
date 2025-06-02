@@ -1,6 +1,4 @@
 // eslint-disable-next-line max-classes-per-file
-import fetch from 'isomorphic-fetch';
-import { saveAs } from 'file-saver';
 import React from 'react';
 import Select from 'react-select';
 import SignaturePad from 'react-signature-canvas';
@@ -305,15 +303,18 @@ class Signature extends React.Component {
     this.state = {
       defaultValue: props.defaultValue,
       hasSigned: false,
+      signatureMode: 'draw', // 'draw' or 'type'
+      typedSignature: '',
     };
     this.inputField = React.createRef();
     this.canvas = React.createRef();
+    this.textCanvas = React.createRef();
     this.timer = null;
   }
 
   clear = () => {
     if (this.state.defaultValue) {
-      this.setState({ defaultValue: '' });
+      this.setState({ defaultValue: '', typedSignature: '' });
     } else if (this.canvas.current) {
       this.canvas.current.clear();
     }
@@ -333,6 +334,53 @@ class Signature extends React.Component {
     return this.state.defaultValue;
   }
 
+  createTextSignature = (text) => {
+    if (!text || text.trim() === '') return '';
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    canvas.width = 300;
+    canvas.height = 150;
+
+    // Set font style - cursive/handwriting style
+    ctx.font = '200 36px "Dancing Script", "Brush Script MT", cursive';
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Clear canvas with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the text
+    ctx.fillStyle = '#000000';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    // Convert to base64
+    const signatureData = canvas.toDataURL().split(',')[1];
+    return signatureData;
+  }
+
+  handleTextChange = (e) => {
+    this.setState({ typedSignature: e.target.value });
+  }
+
+  handleTextBlur = () => {
+    const { typedSignature } = this.state;
+    if (typedSignature.trim()) {
+      const signatureData = this.createTextSignature(typedSignature);
+      this.setState({ defaultValue: signatureData });
+    }
+  }
+
+  toggleSignatureMode = () => {
+    this.setState(prevState => ({
+      signatureMode: prevState.signatureMode === 'draw' ? 'type' : 'draw'
+    }));
+  }
+
   handleEnd = () => {
     if (this.timer) {
       clearTimeout(this.timer);
@@ -349,7 +397,7 @@ class Signature extends React.Component {
   }
 
   render() {
-    const { defaultValue } = this.state;
+    const { defaultValue, signatureMode, typedSignature } = this.state;
     let canClear = !!defaultValue;
     const props = {};
     props.type = 'hidden';
@@ -387,12 +435,59 @@ class Signature extends React.Component {
         <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
-          {this.props.read_only === true || !!sourceDataURL
-            ? (<img src={sourceDataURL} />)
-            : (<SignaturePad {...padProps} />)
-          }
+          {/* Mode toggle buttons */}
+          {this.props.mutable && !this.props.read_only && (
+            <div className="signature-mode-toggle" style={{ marginBottom: '10px' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${signatureMode === 'draw' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={this.toggleSignatureMode}
+                style={{ marginRight: '5px' }}
+              >
+                <i className="fas fa-pen"></i> Draw
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${signatureMode === 'type' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={this.toggleSignatureMode}
+              >
+                <i className="fas fa-keyboard"></i> Type
+              </button>
+            </div>
+          )}
+
+          {this.props.read_only === true || !!sourceDataURL ? (
+            <img src={sourceDataURL} alt="Signature" />
+          ) : (
+            <div>
+              {signatureMode === 'draw' ? (
+                <SignaturePad {...padProps} />
+              ) : (
+                <div className="signature-text-input">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Type your signature here..."
+                    value={typedSignature}
+                    onChange={this.handleTextChange}
+                    onBlur={this.handleTextBlur}
+                    style={{
+                      fontFamily: '"Dancing Script", "Brush Script MT", cursive',
+                      fontSize: '24px',
+                      textAlign: 'center',
+                      height: '60px'
+                    }}
+                  />
+                  <small className="form-text text-muted">
+                    Type your name and it will be converted to a signature when you click away
+                  </small>
+                </div>
+              )}
+            </div>
+          )}
           {canClear && (
-            <i className="fas fa-times clear-signature" onClick={this.clear} title="Clear Signature"></i>)}
+            <i className="fas fa-times clear-signature" onClick={this.clear} title="Clear Signature" style={{ cursor: 'pointer', marginTop: '10px' }}></i>
+          )}
           <input {...props} />
         </div>
       </div>
@@ -757,13 +852,13 @@ class Camera extends React.Component {
 class FileUpload extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
+    this.state = {
       fileUpload: props.defaultValue ? {
         name: props.defaultValue.name || 'Uploaded File',
         size: props.defaultValue.size || 0,
         type: props.defaultValue.type || 'application/octet-stream',
         data: props.defaultValue.data
-      } : null 
+      } : null
     };
   }
 
@@ -776,11 +871,11 @@ class FileUpload extends React.Component {
       file = target.files[0];
       // Check file size (5MB = 5 * 1024 * 1024 bytes)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit. Please choose a smaller file.');
+        window.alert('File size exceeds 5MB limit. Please choose a smaller file.');
         target.value = ''; // Clear the input
         return;
       }
-      const reader = new FileReader();
+      const reader = new window.FileReader();
       reader.onload = (event) => {
         const binaryData = event.target.result;
         self.setState({

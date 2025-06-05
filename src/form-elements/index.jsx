@@ -375,6 +375,13 @@ class Signature extends React.Component {
     }
   }
 
+  handleSignatureModeChange = (e) => {
+    this.setState({ signatureMode: e.target.value });
+    setTimeout(() => {
+      this.clear();
+    }, 100);
+  }
+
   toggleSignatureMode = () => {
     this.setState(prevState => ({
       signatureMode: prevState.signatureMode === 'draw' ? 'type' : 'draw'
@@ -438,24 +445,37 @@ class Signature extends React.Component {
         <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
-          {/* Mode toggle buttons */}
+          {/* Mode toggle radio buttons */}
           {this.props.mutable && !this.props.read_only && (
             <div className="signature-mode-toggle" style={{ marginBottom: '10px' }}>
-              <button
-                type="button"
-                className={`btn btn-sm ${signatureMode === 'draw' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                onClick={this.toggleSignatureMode}
-                style={{ marginRight: '5px' }}
-              >
-                <i className="fas fa-pen"></i> Draw
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm ${signatureMode === 'type' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                onClick={this.toggleSignatureMode}
-              >
-                <i className="fas fa-keyboard"></i> Type
-              </button>
+              <div className="custom-control custom-radio custom-control-inline">
+                <input
+                  id={`signature-mode-draw-${this.props.data.field_name}`}
+                  className="custom-control-input"
+                  type="radio"
+                  name={`signature-mode-${this.props.data.field_name}`}
+                  value="draw"
+                  checked={signatureMode === 'draw'}
+                  onChange={this.handleSignatureModeChange}
+                />
+                <label className="custom-control-label" htmlFor={`signature-mode-draw-${this.props.data.field_name}`}>
+                  Draw
+                </label>
+              </div>
+              <div className="custom-control custom-radio custom-control-inline">
+                <input
+                  id={`signature-mode-type-${this.props.data.field_name}`}
+                  className="custom-control-input"
+                  type="radio"
+                  name={`signature-mode-${this.props.data.field_name}`}
+                  value="type"
+                  checked={signatureMode === 'type'}
+                  onChange={this.handleSignatureModeChange}
+                />
+                <label className="custom-control-label" htmlFor={`signature-mode-type-${this.props.data.field_name}`}>
+                  Type
+                </label>
+              </div>
             </div>
           )}
 

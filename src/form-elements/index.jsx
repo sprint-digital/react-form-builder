@@ -303,7 +303,7 @@ class Signature extends React.Component {
     this.state = {
       defaultValue: props.defaultValue,
       hasSigned: false,
-      signatureMode: 'draw', // 'draw' or 'type'
+      signatureMode: props.custom_value || 'draw', // 'draw' or 'type'
       typedSignature: '',
     };
     this.inputField = React.createRef();
@@ -379,6 +379,9 @@ class Signature extends React.Component {
     this.setState(prevState => ({
       signatureMode: prevState.signatureMode === 'draw' ? 'type' : 'draw'
     }));
+    setTimeout(() => {
+      this.clear();
+    }, 100);
   }
 
   handleEnd = () => {

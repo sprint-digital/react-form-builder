@@ -46,6 +46,9 @@ class ReactForm extends React.Component {
           result[x.name] = x.value.map(y => y.value);
         } else if (x.value !== null) {
           result[x.name] = x.value;
+          if (x.custom_value !== undefined) {
+            result[`${x.name}_custom_value`] = x.custom_value;
+          }
         }
       });
       return result;
@@ -55,6 +58,12 @@ class ReactForm extends React.Component {
 
   _getDefaultValue(item) {
     return this.answerData[item.field_name];
+  }
+
+  _getCustomValue(item) {
+    const customValueKey = `${item.field_name}_custom_value`;
+    const customValue = this.answerData[customValueKey];
+    return customValue || item.custom_value || undefined;
   }
 
   _optionsDefaultValue(item) {
@@ -161,7 +170,7 @@ class ReactForm extends React.Component {
       id: item.id,
       name: item.field_name,
       custom_name: item.custom_name || item.field_name,
-      custom_value: item.custom_value || null,
+      custom_value: this.answerData[`${item.field_name}_custom_value`] || item.custom_value || undefined,
     };
 
     // Skip collecting data for internal items when show_internal is true
@@ -376,7 +385,8 @@ class ReactForm extends React.Component {
       key={`form_${item.id}`}
       data={item}
       read_only={this.props.read_only}
-      defaultValue={this._getDefaultValue(item)} />);
+      defaultValue={this._getDefaultValue(item)}
+      custom_value={this._getCustomValue(item)} />);
   }
 
   getContainerElement(item, Element) {
@@ -486,7 +496,7 @@ class ReactForm extends React.Component {
         case 'FieldSet':
         return this.getContainerElement(item, FieldSet);
         case 'Signature':
-          return <Signature ref={c => this.inputs[item.field_name] = c} read_only={this.props.read_only || item.readOnly} mutable={true} key={`form_${item.id}`} data={item} defaultValue={this._getDefaultValue(item)} />;
+          return <Signature ref={c => this.inputs[item.field_name] = c} read_only={this.props.read_only || item.readOnly} mutable={true} key={`form_${item.id}`} data={item} defaultValue={this._getDefaultValue(item)} custom_value={this._getCustomValue(item)} />;
         case 'Checkboxes':
           return <Checkboxes ref={c => this.inputs[item.field_name] = c} read_only={this.props.read_only} handleChange={this.handleChange} mutable={true} key={`form_${item.id}`} data={item} defaultValue={this._optionsDefaultValue(item)} />;
         case 'Image':

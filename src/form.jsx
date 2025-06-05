@@ -42,10 +42,13 @@ class ReactForm extends React.Component {
     if (Array.isArray(answers)) {
       const result = {};
       answers.forEach(x => {
-        if (x.name.indexOf('tags_') > -1) {
+        if (x.name.indexOf('tags_') > -1 && x.value && x.value !== null) {
           result[x.name] = x.value.map(y => y.value);
-        } else {
+        } else if (x.value !== null) {
           result[x.name] = x.value;
+          if (x.custom_value !== undefined) {
+            result[`${x.name}_custom_value`] = x.custom_value;
+          }
         }
       });
       return result;
@@ -55,6 +58,12 @@ class ReactForm extends React.Component {
 
   _getDefaultValue(item) {
     return this.answerData[item.field_name];
+  }
+
+  _getCustomValue(item) {
+    const customValueKey = `${item.field_name}_custom_value`;
+    const customValue = this.answerData[customValueKey];
+    return customValue || item.custom_value || undefined;
   }
 
   _optionsDefaultValue(item) {
@@ -96,10 +105,10 @@ class ReactForm extends React.Component {
     return $item;
   }
 
-  _getOptionKeyValue = (option) => {
-    return this.props.option_key_value === 'value' ?
-      option.value : option.key;
-  }
+  _getOptionKeyValue = (option) => (
+    this.props.option_key_value === 'value' ?
+      option.value : option.key
+  )
 
   _isIncorrect(item) {
     let incorrect = false;
@@ -148,7 +157,7 @@ class ReactForm extends React.Component {
           if ($item.value === 0) {
             invalid = true;
           }
-        } else if ($item.value === undefined || $item.value.length < 1) {
+        } else if ($item.value === undefined || $item.value === null || (typeof $item.value === 'string' && $item.value.length < 1)) {
           invalid = true;
         }
       }
@@ -161,9 +170,22 @@ class ReactForm extends React.Component {
       id: item.id,
       name: item.field_name,
       custom_name: item.custom_name || item.field_name,
+      custom_value: this.answerData[`${item.field_name}_custom_value`] || item.custom_value || undefined,
     };
+
+    // Skip collecting data for internal items when show_internal is true
+    if (!this.props.show_internal && item.isInternal) {
+      return null;
+    }
+
     if (!itemData.name) return null;
     const ref = this.inputs[item.field_name];
+    
+    // For signature elements, capture the current signatureMode
+    if (item.element === 'Signature' && ref && ref.state) {
+      itemData.custom_value = ref.state.signatureMode;
+    }
+    
     if (item.element === 'Checkboxes' || item.element === 'RadioButtons') {
       const checked_options = [];
       item.options.forEach(option => {
@@ -188,11 +210,16 @@ class ReactForm extends React.Component {
         formData.push(item_data);
       }
     });
+
     return formData;
   }
 
   _getSignatureImg(item) {
     const ref = this.inputs[item.field_name];
+
+    // Always capture the signature mode, regardless of draw/type
+    item.custom_value = ref.state.signatureMode;
+
     const $canvas_sig = ref.canvas.current;
     if ($canvas_sig) {
       const base64 = $canvas_sig.toDataURL().replace('data:image/png;base64,', '');
@@ -204,6 +231,8 @@ class ReactForm extends React.Component {
         $input_sig.value = base64;
       }
     }
+    // For type mode, the signature data is already in ref.state.defaultValue
+    // and gets set in the hidden input field automatically
   }
 
   handleSubmit(e) {
@@ -229,7 +258,7 @@ class ReactForm extends React.Component {
     }
   }
 
-   handleBlur(event) {
+   handleBlur() {
     // Call submit function on blur
     if (this.props.onBlur) {
       const { onBlur } = this.props;
@@ -238,7 +267,7 @@ class ReactForm extends React.Component {
     }
   }
 
-  handleChange(event) {
+  handleChange() {
     // Call submit function on change
     if (this.props.onChange) {
       const { onChange } = this.props;
@@ -249,22 +278,22 @@ class ReactForm extends React.Component {
 
   handleDuplicate(element) {
     const newElement = { ...element };
-    
+
     // Generate new unique ID
     newElement.id = ID.uuid();
-    
+
     // If the element has a field_name, append a number to make it unique
     if (newElement.field_name) {
       const baseFieldName = newElement.field_name;
       const existingNames = this.props.elements.map(item => item.field_name);
       let counter = 1;
       let fieldName;
-      
+
       do {
         fieldName = `${baseFieldName}_${counter}`;
         counter++;
       } while (existingNames.includes(fieldName));
-      
+
       newElement.field_name = fieldName;
     }
 
@@ -272,7 +301,7 @@ class ReactForm extends React.Component {
     const index = this.props.elements.indexOf(element);
     const newElements = [...this.props.elements];
     newElements.splice(index + 1, 0, newElement);
-    
+
     if (this.props.onChange) {
       this.props.onChange(newElements);
     }
@@ -356,7 +385,8 @@ class ReactForm extends React.Component {
       key={`form_${item.id}`}
       data={item}
       read_only={this.props.read_only}
-      defaultValue={this._getDefaultValue(item)} />);
+      defaultValue={this._getDefaultValue(item)}
+      custom_value={this._getCustomValue(item)} />);
   }
 
   getContainerElement(item, Element) {
@@ -466,7 +496,7 @@ class ReactForm extends React.Component {
         case 'FieldSet':
         return this.getContainerElement(item, FieldSet);
         case 'Signature':
-          return <Signature ref={c => this.inputs[item.field_name] = c} read_only={this.props.read_only || item.readOnly} mutable={true} key={`form_${item.id}`} data={item} defaultValue={this._getDefaultValue(item)} />;
+          return <Signature ref={c => this.inputs[item.field_name] = c} read_only={this.props.read_only || item.readOnly} mutable={true} key={`form_${item.id}`} data={item} defaultValue={this._getDefaultValue(item)} custom_value={this._getCustomValue(item)} />;
         case 'Checkboxes':
           return <Checkboxes ref={c => this.inputs[item.field_name] = c} read_only={this.props.read_only} handleChange={this.handleChange} mutable={true} key={`form_${item.id}`} data={item} defaultValue={this._optionsDefaultValue(item)} />;
         case 'Image':

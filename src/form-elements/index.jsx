@@ -1,6 +1,4 @@
 // eslint-disable-next-line max-classes-per-file
-import fetch from 'isomorphic-fetch';
-import { saveAs } from 'file-saver';
 import React from 'react';
 import Select from 'react-select';
 import SignaturePad from 'react-signature-canvas';
@@ -304,21 +302,105 @@ class Signature extends React.Component {
     super(props);
     this.state = {
       defaultValue: props.defaultValue,
+      hasSigned: false,
+      signatureMode: props.custom_value || 'draw', // 'draw' or 'type'
+      typedSignature: '',
     };
     this.inputField = React.createRef();
     this.canvas = React.createRef();
+    this.textCanvas = React.createRef();
+    this.timer = null;
   }
 
   clear = () => {
     if (this.state.defaultValue) {
-      this.setState({ defaultValue: '' });
+      this.setState({ defaultValue: '', typedSignature: '' });
     } else if (this.canvas.current) {
       this.canvas.current.clear();
+    }
+    this.setState({ hasSigned: false });
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+  }
+
+  getSignatureImg = () => {
+    if (this.canvas.current) {
+      const signatureData = this.canvas.current.toDataURL().split(',')[1];
+      this.setState({ defaultValue: signatureData });
+      return signatureData;
+    }
+    return this.state.defaultValue;
+  }
+
+  createTextSignature = (text) => {
+    if (!text || text.trim() === '') return '';
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    canvas.width = 300;
+    canvas.height = 150;
+
+    // Set font style - cursive/handwriting style
+    ctx.font = '200 36px "Dancing Script", "Brush Script MT", cursive';
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Clear canvas with white background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the text
+    ctx.fillStyle = '#000000';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    // Convert to base64
+    const signatureData = canvas.toDataURL().split(',')[1];
+    return signatureData;
+  }
+
+  handleTextChange = (e) => {
+    this.setState({ typedSignature: e.target.value });
+  }
+
+  handleTextBlur = () => {
+    const { typedSignature } = this.state;
+    if (typedSignature.trim()) {
+      const signatureData = this.createTextSignature(typedSignature);
+      this.setState({ defaultValue: signatureData });
+    }
+  }
+
+  toggleSignatureMode = () => {
+    this.setState(prevState => ({
+      signatureMode: prevState.signatureMode === 'draw' ? 'type' : 'draw'
+    }));
+    setTimeout(() => {
+      this.clear();
+    }, 100);
+  }
+
+  handleEnd = () => {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+    this.timer = setTimeout(() => {
+      this.getSignatureImg();
+    }, 3000);
+  }
+
+  handleStart = () => {
+    if (this.timer) {
+      clearTimeout(this.timer);
     }
   }
 
   render() {
-    const { defaultValue } = this.state;
+    const { defaultValue, signatureMode, typedSignature } = this.state;
     let canClear = !!defaultValue;
     const props = {};
     props.type = 'hidden';
@@ -328,14 +410,20 @@ class Signature extends React.Component {
       props.defaultValue = defaultValue;
       props.ref = this.inputField;
     }
-    const pad_props = {};
-    // umd requires canvasProps={{ width: 400, height: 150 }}
+    const padProps = {
+      canvasProps: {
+        width: 300,
+        height: 150,
+      }
+    };
     if (this.props.mutable) {
-      pad_props.defaultValue = defaultValue;
-      pad_props.ref = this.canvas;
+      padProps.defaultValue = defaultValue;
+      padProps.ref = this.canvas;
+      padProps.onEnd = this.handleEnd;
+      padProps.onBegin = this.handleStart;
       canClear = !this.props.read_only;
     }
-    pad_props.clearOnResize = false;
+    padProps.clearOnResize = false;
 
     let baseClasses = 'SortableItem rfb-item';
     if (this.props.data.pageBreakBefore) { baseClasses += ' alwaysbreak'; }
@@ -350,12 +438,59 @@ class Signature extends React.Component {
         <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
-          {this.props.read_only === true || !!sourceDataURL
-            ? (<img src={sourceDataURL} />)
-            : (<SignaturePad {...pad_props} />)
-          }
+          {/* Mode toggle buttons */}
+          {this.props.mutable && !this.props.read_only && (
+            <div className="signature-mode-toggle" style={{ marginBottom: '10px' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${signatureMode === 'draw' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={this.toggleSignatureMode}
+                style={{ marginRight: '5px' }}
+              >
+                <i className="fas fa-pen"></i> Draw
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${signatureMode === 'type' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={this.toggleSignatureMode}
+              >
+                <i className="fas fa-keyboard"></i> Type
+              </button>
+            </div>
+          )}
+
+          {this.props.read_only === true || !!sourceDataURL ? (
+            <img src={sourceDataURL} alt="Signature" />
+          ) : (
+            <div>
+              {signatureMode === 'draw' ? (
+                <SignaturePad {...padProps} />
+              ) : (
+                <div className="signature-text-input">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Type your signature here..."
+                    value={typedSignature}
+                    onChange={this.handleTextChange}
+                    onBlur={this.handleTextBlur}
+                    style={{
+                      fontFamily: '"Dancing Script", "Brush Script MT", cursive',
+                      fontSize: '24px',
+                      textAlign: 'center',
+                      height: '60px'
+                    }}
+                  />
+                  <small className="form-text text-muted">
+                    Type your name and it will be converted to a signature when you click away
+                  </small>
+                </div>
+              )}
+            </div>
+          )}
           {canClear && (
-            <i className="fas fa-times clear-signature" onClick={this.clear} title="Clear Signature"></i>)}
+            <i className="fas fa-times clear-signature" onClick={this.clear} title="Clear Signature" style={{ cursor: 'pointer', marginTop: '10px' }}></i>
+          )}
           <input {...props} />
         </div>
       </div>
@@ -720,7 +855,14 @@ class Camera extends React.Component {
 class FileUpload extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { fileUpload: null };
+    this.state = {
+      fileUpload: props.defaultValue ? {
+        name: props.defaultValue.name || 'Uploaded File',
+        size: props.defaultValue.size || 0,
+        type: props.defaultValue.type || 'application/octet-stream',
+        data: props.defaultValue.data
+      } : null
+    };
   }
 
   displayFileUpload = (e) => {
@@ -730,10 +872,25 @@ class FileUpload extends React.Component {
 
     if (target.files && target.files.length > 0) {
       file = target.files[0];
-
-      self.setState({
-        fileUpload: file,
-      });
+      // Check file size (5MB = 5 * 1024 * 1024 bytes)
+      if (file.size > 5 * 1024 * 1024) {
+        window.alert('File size exceeds 5MB limit. Please choose a smaller file.');
+        target.value = ''; // Clear the input
+        return;
+      }
+      const reader = new window.FileReader();
+      reader.onload = (event) => {
+        const binaryData = event.target.result;
+        self.setState({
+          fileUpload: {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            data: binaryData
+          },
+        });
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -743,29 +900,15 @@ class FileUpload extends React.Component {
     });
   };
 
-  saveFile = async (e) => {
+  saveFile = (e) => {
     e.preventDefault();
-    const sourceUrl = this.props.defaultValue;
-    const response = await fetch(sourceUrl, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json; charset=utf-8',
-      },
-      responseType: 'blob',
-    });
-    const dispositionHeader = response.headers.get('Content-Disposition');
-    const resBlob = await response.blob();
-    // eslint-disable-next-line no-undef
-    const blob = new Blob([resBlob], {
-      type: this.props.data.fileType || response.headers.get('Content-Type'),
-    });
-    if (dispositionHeader && dispositionHeader.indexOf(';filename=') > -1) {
-      const fileName = dispositionHeader.split(';filename=')[1];
-      saveAs(blob, fileName);
-    } else {
-      const fileName = sourceUrl.substring(sourceUrl.lastIndexOf('/') + 1);
-      saveAs(response.url, fileName);
+    if (this.state.fileUpload && this.state.fileUpload.data) {
+      const link = document.createElement('a');
+      link.href = this.state.fileUpload.data;
+      link.download = this.state.fileUpload.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -781,62 +924,61 @@ class FileUpload extends React.Component {
         <ComponentHeader {...this.props} duplicateCard={this.props.duplicateCard} />
         <div className="form-group">
           <ComponentLabel {...this.props} />
-          {this.props.read_only === true &&
-          this.props.defaultValue &&
-          this.props.defaultValue.length > 0 ? (
+
+          <div className='image-upload-container'>
+            <div style={fileInputStyle}>
+              <input
+                name={name}
+                type='file'
+                accept={this.props.data.fileType || '*'}
+                className='image-upload'
+                onChange={this.displayFileUpload}
+              />
+              <div className='image-upload-control'>
+                <div className='btn btn-default'>
+                  <i className='fas fa-file'></i> Upload File
+                </div>
+                <p>Select a file from your computer or device. (Max size: 5MB)</p>
+              </div>
+            </div>
+
+            {this.state.fileUpload && (
+              <div>
+                <div className='file-upload-preview'>
+                  <div
+                    style={{ display: 'inline-block', marginRight: '5px' }}
+                  >
+                    {`Name: ${this.state.fileUpload.name}`}
+                  </div>
+                  <div style={{ display: 'inline-block', marginLeft: '5px' }}>
+                    {this.state.fileUpload.size.length > 6
+                      ? `Size:  ${Math.ceil(
+                          this.state.fileUpload.size / (1024 * 1024)
+                        )} mb`
+                      : `Size:  ${Math.ceil(
+                          this.state.fileUpload.size / 1024
+                        )} kb`}
+                  </div>
+                </div>
+                <br />
+                <div
+                  className='btn btn-file-upload-clear'
+                  onClick={this.clearFileUpload}
+                >
+                  <i className='fas fa-times'></i> Clear File
+                </div>
+              </div>
+            )}
+          </div>
+
+          {this.state.fileUpload && this.state.fileUpload.data && (
             <div>
               <button
-                className='btn btn-default'
+                className='btn btn-default btn-download'
                 onClick={this.saveFile}
               >
                 <i className='fas fa-download'></i> Download File
               </button>
-            </div>
-          ) : (
-            <div className='image-upload-container'>
-              <div style={fileInputStyle}>
-                <input
-                  name={name}
-                  type='file'
-                  accept={this.props.data.fileType || '*'}
-                  className='image-upload'
-                  onChange={this.displayFileUpload}
-                />
-                <div className='image-upload-control'>
-                  <div className='btn btn-default'>
-                    <i className='fas fa-file'></i> Upload File
-                  </div>
-                  <p>Select a file from your computer or device.</p>
-                </div>
-              </div>
-
-              {this.state.fileUpload && (
-                <div>
-                  <div className='file-upload-preview'>
-                    <div
-                      style={{ display: 'inline-block', marginRight: '5px' }}
-                    >
-                      {`Name: ${this.state.fileUpload.name}`}
-                    </div>
-                    <div style={{ display: 'inline-block', marginLeft: '5px' }}>
-                      {this.state.fileUpload.size.length > 6
-                        ? `Size:  ${Math.ceil(
-                            this.state.fileUpload.size / (1024 * 1024)
-                          )} mb`
-                        : `Size:  ${Math.ceil(
-                            this.state.fileUpload.size / 1024
-                          )} kb`}
-                    </div>
-                  </div>
-                  <br />
-                  <div
-                    className='btn btn-file-upload-clear'
-                    onClick={this.clearFileUpload}
-                  >
-                    <i className='fas fa-times'></i> Clear File
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

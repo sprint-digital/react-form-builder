@@ -38,14 +38,14 @@ export default class FormElementsEdit extends React.Component {
     // elemProperty could be content or label
     // targProperty could be value or checked
     const this_element = this.state.element;
-    
+
     // Handle mutual exclusivity between isInternal and required
     if (elemProperty === 'isInternal' && e.target.checked) {
       this_element.required = false;
     } else if (elemProperty === 'required' && e.target.checked) {
       this_element.isInternal = false;
     }
-    
+
     this_element[elemProperty] = e.target[targProperty];
 
     this.setState({
@@ -76,6 +76,38 @@ export default class FormElementsEdit extends React.Component {
       this.props.updateElement.call(this.props.preview, this_element);
       this.setState({ dirty: false });
     }
+  }
+
+  validateFieldName(fieldName) {
+    // Regular expression to match only lowercase letters, numbers, and underscores
+    const validFieldNameRegex = /^[a-z0-9_]+$/;
+    return validFieldNameRegex.test(fieldName);
+  }
+
+  handleFieldNameBlur(e) {
+    const fieldName = e.target.value;
+
+    if (fieldName && !this.validateFieldName(fieldName)) {
+      // Revert to valid value and show visual feedback
+      e.target.value = this.props.element.field_name || '';
+      e.target.style.borderColor = '#dc3545';
+      e.target.style.backgroundColor = '#f8d7da';
+
+      // Reset styling after 3 seconds
+      setTimeout(() => {
+        e.target.style.borderColor = '';
+        e.target.style.backgroundColor = '';
+      }, 3000);
+
+      return;
+    }
+
+    // Reset any error styling
+    e.target.style.borderColor = '';
+    e.target.style.backgroundColor = '';
+
+    // If validation passes, update the element
+    this.updateElement();
   }
 
   convertFromHTML(content) {
@@ -251,15 +283,32 @@ export default class FormElementsEdit extends React.Component {
             }
           </div>
         }
+        { this.props.element.hasOwnProperty('field_name') &&
+          <div className="form-group">
+            <label className="control-label" htmlFor="fieldName">Field Name: (must be unique)</label>
+            <input
+              id="fieldName"
+              type="text"
+              className="form-control"
+              defaultValue={this.props.element.field_name}
+              onBlur={this.handleFieldNameBlur.bind(this)}
+              onChange={this.editElementProp.bind(this, 'field_name', 'value')}
+              placeholder="Enter field name (used as form input name attribute)"
+            />
+            <small className="form-text text-muted">
+              This will be used as the HTML input name attribute. Use lowercase letters, numbers, and underscores only.
+            </small>
+          </div>
+        }
         { this.props.element.hasOwnProperty('src') &&
           <div>
             <div className="form-group">
               <label className="control-label" htmlFor="srcInput"><IntlMessages id="upload-image" />:</label>
-              <input 
-                id="srcInput" 
-                type="file" 
+              <input
+                id="srcInput"
+                type="file"
                 accept="image/*"
-                className="form-control" 
+                className="form-control"
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {

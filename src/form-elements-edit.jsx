@@ -79,8 +79,8 @@ export default class FormElementsEdit extends React.Component {
   }
 
   validateFieldName(fieldName) {
-    // Regular expression to match only lowercase letters, numbers, and underscores
-    const validFieldNameRegex = /^[a-z0-9_]+$/;
+    // Regular expression to match only lowercase letters, numbers, underscores, and dashes
+    const validFieldNameRegex = /^[a-z0-9_-]+$/;
     return validFieldNameRegex.test(fieldName);
   }
 
@@ -296,7 +296,7 @@ export default class FormElementsEdit extends React.Component {
               placeholder="Enter field name (used as form input name attribute)"
             />
             <small className="form-text text-muted">
-              This will be used as the HTML input name attribute. Use lowercase letters, numbers, and underscores only.
+              This will be used as the HTML input name attribute. Use lowercase letters, numbers, underscores, and dashes only.
             </small>
           </div>
         }

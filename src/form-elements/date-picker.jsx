@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, parse, parseISO } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import ReactDatePicker from 'react-datepicker';
 import ComponentHeader from './component-header';
 import ComponentLabel from './component-label';
@@ -16,21 +16,132 @@ class DatePicker extends React.Component {
   // formatMask = '';
 
   handleChange = (dt) => {
-    let placeholder;
+    // This handler is called when a date is selected from the picker calendar or cleared
     const { formatMask } = this.state;
-    if (dt && dt.target) {
-      placeholder = (dt && dt.target && dt.target.value === '') ? formatMask.toLowerCase() : '';
-      const formattedDate = (dt.target.value) ? format(parseISO(dt.target.value), formatMask) : '';
-      this.setState({
-        value: formattedDate,
-        internalValue: formattedDate,
-        placeholder,
-      });
-    } else {
+    if (!dt || (dt && !dt.target)) {
+      // Date selected from picker or cleared (dt is null when clear button is clicked)
       this.setState({
         value: (dt) ? format(dt, formatMask) : '',
-        internalValue: dt,
-        placeholder,
+        internalValue: dt || undefined,
+        placeholder: dt ? '' : formatMask.toLowerCase(),
+      });
+    }
+  };
+
+  formatDateInput = (input) => {
+    // Remove all non-numeric characters
+    const digitsOnly = input.replace(/\D/g, '');
+    const { formatMask } = this.state;
+
+    if (digitsOnly.length === 0) {
+      return '';
+    }
+
+    // Analyze the format mask to determine the date format structure
+    // Common formats: MM/dd/yyyy, dd/MM/yyyy, yyyy/MM/dd, etc.
+    const formatLower = formatMask.toLowerCase();
+
+    // Determine the separator used in the format
+    const separator = formatMask.match(/[^a-zA-Z0-9]/)?.[0] || '/';
+
+    // Determine the positions of day, month, and year in the format
+    const monthIndex = formatLower.indexOf('m');
+    const dayIndex = formatLower.indexOf('d');
+    const yearIndex = formatLower.indexOf('y');
+
+    // Create an array of format parts with their positions
+    const formatParts = [
+      { type: 'month', index: monthIndex, length: 2 },
+      { type: 'day', index: dayIndex, length: 2 },
+      { type: 'year', index: yearIndex, length: 4 },
+    ].sort((a, b) => a.index - b.index);
+
+    // Format the digits based on the detected format
+    let formatted = '';
+    let digitIndex = 0;
+
+    for (let i = 0; i < formatParts.length; i++) {
+      const part = formatParts[i];
+      const partLength = part.length;
+
+      if (digitIndex >= digitsOnly.length) {
+        break;
+      }
+
+      const partDigits = digitsOnly.slice(digitIndex, digitIndex + partLength);
+      formatted += partDigits;
+      digitIndex += partLength;
+
+      // Add separator after each part except the last one
+      if (i < formatParts.length - 1 && digitIndex < digitsOnly.length) {
+        formatted += separator;
+      }
+    }
+
+    return formatted;
+  };
+
+  handleChangeRaw = (e) => {
+    // This handler is called when the user manually types in the input field
+    const inputValue = e.target.value;
+    const { formatMask } = this.state;
+
+    // If input is empty, clear the date
+    if (inputValue === '') {
+      this.setState({
+        value: '',
+        internalValue: undefined,
+        placeholder: formatMask.toLowerCase(),
+      });
+    }
+
+    // Allow typing - React DatePicker will handle the input display
+  };
+
+  handleBlur = (e) => {
+    // This handler is called when the input loses focus (on blur)
+    const inputValue = e.target.value;
+    const { formatMask } = this.state;
+
+    // If input is empty, just clear
+    if (inputValue === '') {
+      this.setState({
+        value: '',
+        internalValue: undefined,
+        placeholder: formatMask.toLowerCase(),
+      });
+      return;
+    }
+
+    // Auto-format the input on blur (e.g., "08081995" -> "08/08/1995")
+    const formattedInput = this.formatDateInput(inputValue);
+
+    // Try to parse the formatted input
+    try {
+      const parsedDate = parse(formattedInput, formatMask, new Date());
+
+      // Check if the parsed date is valid
+      if (isValid(parsedDate)) {
+        const finalFormattedDate = format(parsedDate, formatMask);
+        this.setState({
+          value: finalFormattedDate,
+          internalValue: parsedDate,
+          placeholder: '',
+        });
+      } else {
+        // Invalid date after formatting - clear the input
+        this.setState({
+          value: '',
+          internalValue: undefined,
+          placeholder: formatMask.toLowerCase(),
+        });
+      }
+    } catch (error) {
+      // Parsing failed - clear the input
+      this.setState({
+        value: '',
+        internalValue: undefined,
+        placeholder: formatMask.toLowerCase(),
       });
     }
   };
@@ -134,6 +245,8 @@ class DatePicker extends React.Component {
                 name={props.name}
                 ref={props.ref}
                 onChange={this.handleChange}
+                onChangeRaw={this.handleChangeRaw}
+                onBlur={this.handleBlur}
                 selected={this.state.internalValue}
                 todayButton={'Today'}
                 className = "form-control"
